@@ -1,0 +1,8 @@
+<%
+img_src = event.respond_to?(:picture) ? image_tag(event.picture, :alt => "#{event.name rescue ''} Picture") : ''
+desc = event.description rescue ''
+%>
+
+<div class="event">
+  <%= link_to("#{img_src} #{event.name rescue 'Untitled'}", event.url, { :title => desc }) %>
+</div>

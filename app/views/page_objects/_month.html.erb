@@ -1,0 +1,21 @@
+<% 
+  prev_cal = Date.civil(page_object.year, page_object.month, 1) << 1
+  next_cal = Date.civil(page_object.year, page_object.month, 1) >> 1 
+  prev_m_param = "#{prev_cal.month}-#{prev_cal.year}" 
+  next_m_param = "#{next_cal.month}-#{next_cal.year}"
+%>
+
+<%=calendar :year => page_object.year, :month => page_object.month, :show_today => true, 
+  :previous_month_text => link_to('&laquo;', parent_url(:month => prev_m_param)), 
+  :next_month_text => link_to('&raquo;', parent_url(:month => prev_m_param)) do |d|
+  
+  tomorrow = d + 1
+  todays_events = page_object.events.reject { |e| 
+    !( d.month == page_object.month && d.year == page_object.year && 
+    Time.parse(e.start) <= Time.local(tomorrow.year, tomorrow.month, tomorrow.mday)  &&
+    Time.parse(e.end)   >= Time.local(d.year, d.month, d.mday))  }
+  
+  todays_html = todays_events.map { |e| render :partial => 'event', :locals => { :event => e }}.join
+  ["<div class=\"date\">#{d.mday}</div><p>#{todays_html}</p>"]
+
+end %>
