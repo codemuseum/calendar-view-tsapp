@@ -3,7 +3,7 @@ require 'date'
 # CalendarHelper allows you to draw a databound calendar with fine-grained CSS formatting
 module CalendarHelper
 
-  VERSION = '0.3.0'
+  VERSION = '0.3.2'
 
   # Returns an HTML calendar. In its simplest form, this method generates a plain
   # calendar (which can then be customized using CSS).
@@ -68,23 +68,27 @@ module CalendarHelper
     block ||= Proc.new {|d| nil}
 
     defaults = {
-      :year                => Time.now.year,
-      :month               => Time.now.month,
-      :table_class         => 'calendar',
-      :month_name_class    => 'monthName',
-      :other_month_class   => 'otherMonth',
-      :day_name_class      => 'dayName',
-      :day_class           => 'day',
-      :abbrev              => (0..2),
-      :first_day_of_week   => 0,
-      :accessible          => false,
-      :show_today          => true,
-      :previous_month_text => nil,
-      :next_month_text     => nil
+      :year                 => Time.now.year,
+      :month                => Time.now.month,
+      :table_class          => 'calendar',
+      :month_name_class     => 'monthName',
+      :other_month_class    => 'otherMonth',
+      :day_name_class       => 'dayName',
+      :day_class            => 'day',
+      :abbrev               => (0..2),
+      :first_day_of_week    => 0,
+      :accessible           => false,
+      :show_today           => true,
+      :show_year            => false,
+      :previous_month_text  => nil,
+      :previous_month_class => 'prevMonth',
+      :next_month_text      => nil,
+      :next_month_class     => 'nextMonth'
     }
     options = defaults.merge options
     
     options[:month_name_text] ||= Date::MONTHNAMES[options[:month]]
+    options[:month_name_text] += " #{options[:year]}" if options[:show_year]
 
     first = Date.civil(options[:year], options[:month], 1)
     last = Date.civil(options[:year], options[:month], -1)
@@ -101,13 +105,13 @@ module CalendarHelper
     cal = %(<table class="#{options[:table_class]}" border="0" cellspacing="0" cellpadding="0">)
     cal << %(<thead><tr>)
     if options[:previous_month_text] or options[:next_month_text]
-      cal << %(<th colspan="2">#{options[:previous_month_text]}</th>)
+      cal << %(<th colspan="2" class="#{options[:previous_month_class]}">#{options[:previous_month_text]}</th>)
       colspan=3
     else
       colspan=7
     end
     cal << %(<th colspan="#{colspan}" class="#{options[:month_name_class]}">#{options[:month_name_text]}</th>)
-    cal << %(<th colspan="2">#{options[:next_month_text]}</th>) if options[:next_month_text]
+    cal << %(<th colspan="2" class="#{options[:next_month_class]}">#{options[:next_month_text]}</th>) if options[:next_month_text]
     cal << %(</tr><tr class="#{options[:day_name_class]}">)
     day_names.each do |d|
       unless d[options[:abbrev]].eql? d
@@ -118,34 +122,53 @@ module CalendarHelper
     end
     cal << "</tr></thead><tbody><tr>"
     beginning_of_week(first, first_weekday).upto(first - 1) do |d|
-      cal << %(<td class="#{options[:other_month_class]})
-      cal << " weekendDay" if weekend?(d)
+      # Allow items to be displayed on the previous month days that fall
+      # on the first week of the month calendar.
+      cell_text, cell_attrs = block.call(d)
       if options[:accessible]
-        cal << %(">#{d.day}<span class="hidden"> #{Date::MONTHNAMES[d.month]}</span></td>)
+        cell_text ||= "#{d.mday}<span class='hidden'> #{Date::MONTHNAMES[d.month]}</span>"
       else
-        cal << %(">#{d.day}</td>)
+        cell_text ||= "#{d.mday}"
       end
+      cell_attrs ||= {:class => options[:day_class]}
+      cell_attrs[:class] += " #{options[:other_month_class]}"
+      cell_attrs[:class] += " weekendDay" if [0, 6].include?(d.wday) 
+      cell_attrs[:class] += " firstDay" if d.wday == first_weekday
+      cell_attrs = cell_attrs.map {|k, v| %(#{k}="#{v}") }.join(" ")
+      cal << "<td #{cell_attrs}>#{cell_text}</td>"
     end unless first.wday == first_weekday
     first.upto(last) do |cur|
       cell_text, cell_attrs = block.call(cur)
       cell_text  ||= cur.mday
       cell_attrs ||= {:class => options[:day_class]}
       cell_attrs[:class] += " weekendDay" if [0, 6].include?(cur.wday) 
-      cell_attrs[:class] += " today" if (cur == Date.today) and options[:show_today]  
+      cell_attrs[:class] += " today" if (cur == Date.today) and options[:show_today] 
+      cell_attrs[:class] += " firstDay" if cur.wday == first_weekday 
       cell_attrs = cell_attrs.map {|k, v| %(#{k}="#{v}") }.join(" ")
       cal << "<td #{cell_attrs}>#{cell_text}</td>"
       cal << "</tr><tr>" if cur.wday == last_weekday
     end
     (last + 1).upto(beginning_of_week(last + 7, first_weekday) - 1)  do |d|
-      cal << %(<td class="#{options[:other_month_class]})
-      cal << " weekendDay" if weekend?(d)
+      # Allow items to be displayed of the next month days that fall
+      # on the last week of the month calendar.
+      cell_text, cell_attrs = block.call(d)
       if options[:accessible]
-        cal << %(">#{d.day}<span class='hidden'> #{Date::MONTHNAMES[d.mon]}</span></td>)
+        cell_text ||= "#{d.mday}<span class='hidden'> #{Date::MONTHNAMES[d.month]}</span>"
       else
-        cal << %(">#{d.day}</td>)        
+        cell_text ||= "#{d.mday}"
       end
+      cell_attrs ||= {:class => options[:day_class]}
+      cell_attrs[:class] += " #{options[:other_month_class]}"
+      cell_attrs[:class] += " weekendDay" if [0, 6].include?(d.wday) 
+      cell_attrs[:class] += " firstDay" if d.wday == first_weekday
+      cell_attrs = cell_attrs.map {|k, v| %(#{k}="#{v}") }.join(" ")
+      cal << "<td #{cell_attrs}>#{cell_text}</td>"
     end unless last.wday == last_weekday
-    cal << "</tr></tbody></table>"
+    # If the last day of the month is also the last day of the weed then we 
+    # have an open row that needs to be removed, otherwise we have a week row 
+    # that now needs to be closed.
+    last.wday == last_weekday ? cal.chomp!("<tr>") : cal << "</tr>"
+    cal << "</tbody></table>"
   end
   
   private

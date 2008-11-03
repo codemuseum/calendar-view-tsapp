@@ -1,5 +1,5 @@
 <% stylesheets 'calendar-view' %>
 <% # javascripts 'prototype', 'effects', 'dragdrop', 'assets' %>
 
-
+<h1><%=h @page_object.header %></h1>
 <%= render :partial => 'month', :locals => { :page_object => @page_object } %>
