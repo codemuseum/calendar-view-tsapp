@@ -7,7 +7,7 @@
 
 <%=calendar :year => page_object.year, :month => page_object.month, :show_today => true, :show_year => true, 
   :previous_month_text => link_to('&laquo;', parent_url(:month => prev_m_param)), 
-  :next_month_text => link_to('&raquo;', parent_url(:month => prev_m_param)) do |d|
+  :next_month_text => link_to('&raquo;', parent_url(:month => next_m_param)) do |d|
   
   tomorrow = d + 1
   todays_events = page_object.events.reject { |e| 
