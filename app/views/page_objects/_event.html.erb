@@ -1,5 +1,5 @@
 <%
-img_src = event.respond_to?(:picture) ? image_tag(event.picture, :alt => "#{event.name rescue ''} Picture") : ''
+img_src = event.respond_to?(:picture) && !event.picture.nil? ? image_tag(event.picture, :alt => "#{event.name rescue ''} Picture") : ''
 desc = event.description rescue ''
 %>
 
