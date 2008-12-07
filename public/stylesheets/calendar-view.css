@@ -10,7 +10,9 @@
 .app-calendar-view .nextMonth { text-align:right; font-size:170%; }
 
 .app-calendar-view .day {text-align:center;}
+/*.app-calendar-view .day.today .date {background-color:#fffeb8; color:#666;} caching can't handle this */
 .app-calendar-view .day .date {background-color:#eee;font-weight:bold; padding:2px 4px; text-align:left;}
+.app-calendar-view .day .event {padding:6px;}
 
 .app-calendar-view td { font-size:80%; padding-bottom:12px; vertical-align:top; width:14%; }
 .app-calendar-view img {width:12px; border:0;}
