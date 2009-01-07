@@ -14,7 +14,7 @@ class PageObject < ActiveRecord::Base
       self.month, self.year = now.month, now.year
     end
     month_start = Time.zone.local(self.year, self.month, 1)
-    month_end = Time.zone.local(self.year, self.month, 31)
+    month_end = Time.zone.local(self.year, self.month, 31, 23, 59, 59)
     
     self.events = self.organization.find_data(:events, 
       :include => [:url, :start, :end, :name, :description, :picture], 
